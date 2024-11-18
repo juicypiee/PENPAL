@@ -1,9 +1,7 @@
 import mysql.connector
 import networkx as nx
 
-# HELLOW MY NAME IS JAKIM, THE GREAT
-# ANOTHER TRY, IF PUSH FUNCTION IN GITHUB WORKS
-# ANOTHER TRY LANG ULIT
+# linisin ko lang muna
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(

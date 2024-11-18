@@ -2,6 +2,7 @@ import mysql.connector
 import networkx as nx
 
 # linisin ko lang muna
+# holy cow what is happening to the world!
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(

@@ -3,6 +3,7 @@ import networkx as nx
 
 # linisin ko lang muna
 # holy cow what is happening to the world!
+# try recom2, kung lalabas
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(

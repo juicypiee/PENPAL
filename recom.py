@@ -1,4 +1,4 @@
-import mysql.connector
+import mysql.connector  
 import networkx as nx
 
 # linisin ko lang muna
@@ -7,9 +7,9 @@ import networkx as nx
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
-    host="192.168.100.175",
-    user="jkim",  # Replace with your MySQL username
-    password="1028",  # Replace with your MySQL password
+    host="localhost",
+    user="root",  # Replace with your MySQL username
+    password="",  # Replace with your MySQL password
     database="social_media"
 )
 
@@ -116,6 +116,17 @@ class SocialMediaGraph:
         sorted_recommendations = dict(sorted(recommendations.items(), key=lambda item: item[1], reverse=True))
 
         return sorted_recommendations
+    
+    def view_all_users(self):
+        """Display all registered usernames."""
+        try:
+            db_cursor.execute("SELECT username FROM users")
+            users = db_cursor.fetchall()
+            print("\nAll Registered Users:")
+            for user in users:
+                print(user[0])
+        except mysql.connector.Error as err:
+            print(f"Error fetching users: {err}")
 
 # Account creation and login functions
 def create_account(username, age, location, gender, interests, password):
@@ -152,7 +163,8 @@ def main():
         if not logged_in_user:
             print("1. Create Account")
             print("2. Log In")
-            print("3. Exit")
+            print("3. View All Registered Users")
+            print("4. Exit")
         else:
             print("1. View Friend Recommendations")
             print("2. Add Friend Menu")
@@ -173,6 +185,9 @@ def main():
             username = input("Enter username: ")
             password = input("Enter password: ")
             logged_in_user = login(username, password)
+
+        elif choice == "3" and not logged_in_user:
+            sm_graph.view_all_users()
 
         elif choice == "1" and logged_in_user:
             recommendations = sm_graph.recommend_friends(logged_in_user)
@@ -212,7 +227,7 @@ def main():
                 elif sub_choice == "5":
                     break
 
-        elif choice == "3" and not logged_in_user:
+        elif choice == "4" and not logged_in_user:
             print("Exiting...")
             break
 

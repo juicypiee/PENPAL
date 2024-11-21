@@ -1,102 +1,109 @@
-import mysql.connector
+import json
+import os
 import networkx as nx
-    
-# NAMO
 
-# Connect to MySQL database
-db_connection = mysql.connector.connect(
-    host="192.168.100.175",
-    user="jkim",  # Replace with your MySQL username
-    password="1028",  # Replacexamppxamp with your MySQL password
-    database="social_media"
-)
+# Define file paths for user data and friend recommendations
+user_data_file = "/home/jkim/python/FILE HANDLING/users_data2.json"
 
-db_cursor = db_connection.cursor()
+# Ensure the directory exists
+os.makedirs(os.path.dirname(user_data_file), exist_ok=True)
+
+# Load and save functions2
+def load_user_data():
+    try:
+        with open(user_data_file, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_user_data(users_data):
+    with open(user_data_file, 'w') as file:
+        json.dump(users_data, file, indent=4)
 
 # Graph for users and friendships
-class SocialMediaGraph: 
+class SocialMediaGraph:
     def __init__(self):
         self.graph = nx.Graph()
+        self.users_data = load_user_data()  # Always load the data on initialization
         self._initialize_graph()
 
     def _initialize_graph(self):
-        """Initialize graph nodes and edges from MySQL database."""
-        db_cursor.execute("SELECT username FROM users")
-        users = db_cursor.fetchall()
-        for user in users:
-            self.graph.add_node(user[0])
-
-        db_cursor.execute("SELECT user1, user2 FROM friendships")
-        friendships = db_cursor.fetchall()
-        for user1, user2 in friendships:
-            self.graph.add_edge(user1, user2)
+        """Initialize graph nodes and edges from saved data."""
+        for user in self.users_data:
+            self.graph.add_node(user)
+            for friend in self.users_data[user].get("friends", []):
+                self.graph.add_edge(user, friend)
 
     def add_user(self, username, user_data):
         """Add a new user to the system."""
-        db_cursor.execute("SELECT username FROM users WHERE username = %s", (username,))
-        if db_cursor.fetchone():
-            print("Username already exists.")
-            return False
+        if username not in self.users_data:
+            self.users_data[username] = user_data
+            save_user_data(self.users_data)  # Save the new user data immediately
 
-        db_cursor.execute(
-            "INSERT INTO users (username, age, location, gender, interests, password) VALUES (%s, %s, %s, %s, %s, %s)",
-            (username, user_data["age"], user_data["location"], user_data["gender"], ", ".join(user_data["interests"]), user_data["password"])
-        )
-        db_connection.commit()
-        self.graph.add_node(username)
-        return True
+            # Reinitialize the graph to reflect the new user and friendships
+            self._initialize_graph()
 
     def send_friend_request(self, from_user, to_user):
-        db_cursor.execute("SELECT username FROM users WHERE username = %s", (to_user,))
-        if not db_cursor.fetchone():
+        self.users_data = load_user_data()  # Reload the latest data before any operation
+        if to_user not in self.users_data:
             print(f"User {to_user} does not exist.")
             return
         if from_user == to_user:
             print("You cannot send a friend request to yourself.")
             return
-
-        db_cursor.execute("SELECT * FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, to_user))
-        if db_cursor.fetchone():
-            print(f"Friend request already s  to {to_user}.")
-            return
-
-        db_cursor.execute(
-            "INSERT INTO friend_requests (from_user, to_user) VALUES (%s, %s)",
-            (from_user, to_user)
-        )
-        db_connection.commit()
-        print(f"{from_user} sent a friend request to {to_user}")
+        if "friend_requests" not in self.users_data[to_user]:
+            self.users_data[to_user]["friend_requests"] = []
+        
+        # Avoid adding the same request multiple times
+        if from_user not in self.users_data[to_user]["friend_requests"]:
+            self.users_data[to_user]["friend_requests"].append(from_user)
+            save_user_data(self.users_data)
+            print(f"{from_user} sent a friend request to {to_user}")
+        else:
+            print(f"Friend request already sent to {to_user}.")
 
     def accept_friend_request(self, user, from_user):
-        db_cursor.execute("SELECT * FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
-        if not db_cursor.fetchone():
+        self.users_data = load_user_data()  # Reload latest data
+        if user not in self.users_data or from_user not in self.users_data.get(user, {}).get("friend_requests", []):
             print("No friend request found from this user.")
             return
-
-        db_cursor.execute("DELETE FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
-        db_cursor.execute(
-            "INSERT INTO friendships (user1, user2) VALUES (%s, %s), (%s, %s)",
-            (user, from_user, from_user, user)
-        )
-        db_connection.commit()
+        # Remove the friend request from the user's pending list
+        self.users_data[user]["friend_requests"].remove(from_user)
+        
+        # Add the new friend to both users' friend lists if not already present
+        if "friends" not in self.users_data[user]:
+            self.users_data[user]["friends"] = []
+        if "friends" not in self.users_data[from_user]:
+            self.users_data[from_user]["friends"] = []
+        
+        if from_user not in self.users_data[user]["friends"]:
+            self.users_data[user]["friends"].append(from_user)
+        if user not in self.users_data[from_user]["friends"]:
+            self.users_data[from_user]["friends"].append(user)
+        
+        # Add an edge between the two users in the graph
         self.graph.add_edge(user, from_user)
+        
+        save_user_data(self.users_data)
         print(f"{user} accepted the friend request from {from_user}")
 
     def decline_friend_request(self, user, from_user):
-        db_cursor.execute("SELECT * FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
-        if not db_cursor.fetchone():
+        self.users_data = load_user_data()  # Reload latest data
+        if user not in self.users_data or from_user not in self.users_data.get(user, {}).get("friend_requests", []):
             print("No friend request found from this user.")
             return
-
-        db_cursor.execute("DELETE FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
-        db_connection.commit()
+        self.users_data[user]["friend_requests"].remove(from_user)
+        save_user_data(self.users_data)
         print(f"{user} declined the friend request from {from_user}")
 
     def get_friend_requests(self, user):
-        db_cursor.execute("SELECT from_user FROM friend_requests WHERE to_user = %s", (user,))
-        return [row[0] for row in db_cursor.fetchall()]
+        self.users_data = load_user_data()  # Reload latest data
+        # Safely handle missing data
+        return self.users_data.get(user, {}).get("friend_requests", [])
 
     def recommend_friends(self, username):
+        """Recommend friends for a user based on mutual friends and current friendships."""
+        self.users_data = load_user_data()  # Reload latest data
         if username not in self.graph:
             print(f"User {username} is not in the system.")
             return {}
@@ -104,36 +111,46 @@ class SocialMediaGraph:
         friends = set(self.graph.neighbors(username))
         recommendations = {}
 
+        # Loop through each friend to find friends of friends (fof)
         for friend in friends:
-            for fof in self.graph.neighbors(friend):
-                if fof != username and fof not in friends:
+            for fof in self.graph.neighbors(friend):  # fof = friend of friend
+                if fof != username and fof not in friends:  # Exclude the user and their current friends
+                    # Count mutual friends only once for each unique fof
                     if fof not in recommendations:
+                        # Calculate mutual friends once per fof
                         mutual_count = len(set(self.graph.neighbors(fof)).intersection(friends))
                         recommendations[fof] = mutual_count
 
+        # Sort recommendations by mutual friends count (descending order)
         sorted_recommendations = dict(sorted(recommendations.items(), key=lambda item: item[1], reverse=True))
 
         return sorted_recommendations
 
 # Account creation and login functions
 def create_account(username, age, location, gender, interests, password):
-    sm_graph = SocialMediaGraph()
-    user_data = {
+    users_data = load_user_data()  # Reload user data
+    if username in users_data:
+        print("Username already exists. Choose a different username.")
+        return False
+
+    user = {
         "age": age,
         "location": location,
         "gender": gender,
         "interests": interests,
+        "friends": [],
+        "friend_requests": [],
         "password": password
     }
-    if sm_graph.add_user(username, user_data):
-        print(f"Account for {username} created successfully.")
-    else:
-        print("Account creation failed.")
+
+    sm_graph = SocialMediaGraph()
+    sm_graph.add_user(username, user)
+    print(f"Account for {username} created successfully.")
+    return True
 
 def login(username, password):
-    db_cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
-    result = db_cursor.fetchone()
-    if result and result[0] == password:
+    users_data = load_user_data()  # Reload user data
+    if username in users_data and users_data[username]["password"] == password:
         print(f"Welcome back, {username}!")
         return username
     else:
@@ -209,14 +226,17 @@ def main():
 
                 elif sub_choice == "5":
                     break
-
-        elif choice == "3" and not logged_in_user:
-            print("Exiting...")
-            break
-
-        elif choice == "3" and logged_in_user:
-            print(f"Logging out {logged_in_user}...")
-            logged_in_user = None
+                else:
+                    print("Invalid choice. Please try again.")
+        
+        elif choice == "3":
+            if logged_in_user:
+                logged_in_user = None
+                print("You have logged out.")
+            else:
+                break
+        else:
+            print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
     main()

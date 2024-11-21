@@ -3,13 +3,14 @@ import networkx as nx
 
 # linisin ko lang muna
 # holy cow what is happening to the world!
-# TESTING IN A ANOTHER COMPUTER
+# TESTING IN A ANOTHER COMPUTER 
+# helooooooooowwwww
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
-    host="192.168.100.175",
-    user="jkim",  # Replace with your MySQL username
-    password="1028",  # Replace with your MySQL password
+    host="localhost",
+    user="root",  # Replace with your MySQL username
+    password="",  # Replace with your MySQL password
     database="social_media"
 )
 

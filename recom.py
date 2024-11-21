@@ -1,13 +1,6 @@
 import mysql.connector
 import networkx as nx
 
-# linisin ko lang muna
-# holy cow what is happening to the world!
-# TESTING IN A ANOTHER COMPUTER 
-# helooooooooowwwww
-    
-# JC JUICY MUCLES
-
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
     host="localhost",

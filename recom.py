@@ -1,27 +1,18 @@
 import mysql.connector
 import networkx as nx
-<<<<<<< HEAD
 
 # linisin ko lang muna
 # holy cow what is happening to the world!
 # TESTING IN A ANOTHER COMPUTER 
 # helooooooooowwwww
-=======
->>>>>>> ab5cbd82a7a7d45cc62d4b77e70dd652d2a7dced
     
 # JC JUICY MUCLES
 
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
-<<<<<<< HEAD
     host="localhost",
     user="root",  # Replace with your MySQL username
     password="",  # Replace with your MySQL password
-=======
-    host="192.168.100.175",
-    user="jkim",  # Replace with your MySQL username
-    password="1028",  # Replacexamppxamp with your MySQL password
->>>>>>> ab5cbd82a7a7d45cc62d4b77e70dd652d2a7dced
     database="social_media"
 )
 

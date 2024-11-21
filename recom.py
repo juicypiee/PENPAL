@@ -2,6 +2,7 @@ import mysql.connector
 import networkx as nx
 
 # BAGO 123
+# try lang - annie hehe
     
 # Connect to MySQL database
 db_connection = mysql.connector.connect(

@@ -1,9 +1,9 @@
-CREATE DATABASE social_media;
+CREATE DATABASE IF NOT EXISTS social_media;
 
 USE social_media;
 
 -- Table for users
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) PRIMARY KEY,
     age INT,
     location VARCHAR(100),
@@ -13,7 +13,7 @@ CREATE TABLE users (
 );
 
 -- Table for friendships (many-to-many relationship)
-CREATE TABLE friendships (
+CREATE TABLE IF NOT EXISTS friendships (
     user1 VARCHAR(50),
     user2 VARCHAR(50),
     PRIMARY KEY (user1, user2),
@@ -22,10 +22,12 @@ CREATE TABLE friendships (
 );
 
 -- Table for friend requests
-CREATE TABLE friend_requests (
+CREATE TABLE IF NOT EXISTS friend_requests (
     from_user VARCHAR(50),
     to_user VARCHAR(50),
+    status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
     PRIMARY KEY (from_user, to_user),
     FOREIGN KEY (from_user) REFERENCES users(username) ON DELETE CASCADE,
     FOREIGN KEY (to_user) REFERENCES users(username) ON DELETE CASCADE
 );
+

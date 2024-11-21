@@ -1,9 +1,6 @@
 import mysql.connector  
 import networkx as nx
 
-# BAGO 123
-# try lang - annie hehe
-    
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
     host="localhost",
@@ -62,7 +59,7 @@ class SocialMediaGraph:
             return
 
         db_cursor.execute(
-            "INSERT INTO friend_requests (from_user, to_user) VALUES (%s, %s)",
+            "INSERT INTO friend_requests (from_user, to_user, status) VALUES (%s, %s, 'pending')",
             (from_user, to_user)
         )
         db_connection.commit()
@@ -74,13 +71,12 @@ class SocialMediaGraph:
             print("No friend request found from this user.")
             return
 
-        db_cursor.execute("DELETE FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
+        db_cursor.execute("UPDATE friend_requests SET status = 'accepted' WHERE from_user = %s AND to_user = %s", (from_user, user))
         db_cursor.execute(
             "INSERT INTO friendships (user1, user2) VALUES (%s, %s), (%s, %s)",
             (user, from_user, from_user, user)
         )
         db_connection.commit()
-        self.graph.add_edge(user, from_user)
         print(f"{user} accepted the friend request from {from_user}")
 
     def decline_friend_request(self, user, from_user):
@@ -89,13 +85,14 @@ class SocialMediaGraph:
             print("No friend request found from this user.")
             return
 
-        db_cursor.execute("DELETE FROM friend_requests WHERE from_user = %s AND to_user = %s", (from_user, user))
+        db_cursor.execute("UPDATE friend_requests SET status = 'rejected' WHERE from_user = %s AND to_user = %s", (from_user, user))
         db_connection.commit()
         print(f"{user} declined the friend request from {from_user}")
 
     def get_friend_requests(self, user):
-        db_cursor.execute("SELECT from_user FROM friend_requests WHERE to_user = %s", (user,))
-        return [row[0] for row in db_cursor.fetchall()]
+        db_cursor.execute("SELECT from_user, status FROM friend_requests WHERE to_user = %s", (user,))
+        requests = db_cursor.fetchall()
+        return [{"from_user": row[0], "status": row[1]} for row in requests]
 
     def recommend_friends(self, username):
         if username not in self.graph:
@@ -226,13 +223,16 @@ def main():
                 elif sub_choice == "5":
                     break
 
+        elif choice == "3" and logged_in_user:
+            logged_in_user = None
+            print("Logged out successfully.")
+
         elif choice == "4" and not logged_in_user:
-            print("Exiting...")
+            print("Exiting the system. Goodbye!")
             break
 
-        elif choice == "3" and logged_in_user:
-            print(f"Logging out {logged_in_user}...")
-            logged_in_user = None
+        else:
+            print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 import mysql.connector
 import networkx as nx
     
-# NAMO
+# JC JUICY MUCLES
 
 # Connect to MySQL database
 db_connection = mysql.connector.connect(
